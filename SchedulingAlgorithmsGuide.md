@@ -1,6 +1,6 @@
 # Simple Java Snippets for Scheduling Algorithms
 
-Each algorithm is a separate method. Put the methods and helpers inside one Java class, and add the imports below. The CPU examples print the process that runs during each time unit. The disk examples return the head's path and total movement.
+Each algorithm is a separate method. Put the methods and helpers inside one Java class, and add the imports below. The CPU examples print a Gantt chart with each process's start and end time. The disk examples return the head's path and total movement.
 
 ```java
 import java.util.*;
@@ -47,7 +47,35 @@ static List<Process> byArrival(List<Process> processes) {
     });
     return sorted;
 }
+
+static class GanttChart {
+    List<String> names = new ArrayList<>();
+    List<Integer> starts = new ArrayList<>();
+    List<Integer> ends = new ArrayList<>();
+
+    void add(String name, int start, int end) {
+        int last = names.size() - 1;
+        if (last >= 0 && names.get(last).equals(name) && ends.get(last) == start) {
+            ends.set(last, end);
+        } else {
+            names.add(name);
+            starts.add(start);
+            ends.add(end);
+        }
+    }
+
+    void print() {
+        System.out.print("Gantt chart: ");
+        for (int i = 0; i < names.size(); i++) {
+            System.out.print("| " + names.get(i) + " "
+                    + starts.get(i) + "-" + ends.get(i) + " ");
+        }
+        System.out.println("|");
+    }
+}
 ```
+
+Call `chart.add(processId, time, time + 1)` whenever a process runs for one time unit. Use `"Idle"` as the process ID when the CPU is idle.
 
 Create processes like this:
 
@@ -69,6 +97,7 @@ The process with the least remaining time runs. Check again every time unit, so 
 ```java
 static void srtf(List<Process> processes) {
     resetProcesses(processes);
+    GanttChart chart = new GanttChart();
     int time = 0;
     int finished = 0;
 
@@ -84,12 +113,12 @@ static void srtf(List<Process> processes) {
         }
 
         if (shortest == null) {
-            System.out.println("Idle");
+            chart.add("Idle", time, time + 1);
             time++;
             continue;
         }
 
-        System.out.println(shortest.id);
+        chart.add(shortest.id, time, time + 1);
         shortest.remaining--;
         time++;
 
@@ -97,6 +126,7 @@ static void srtf(List<Process> processes) {
             finished++;
         }
     }
+    chart.print();
 }
 ```
 
@@ -107,6 +137,7 @@ The process with the smallest priority number runs. Check again every time unit,
 ```java
 static void preemptivePriority(List<Process> processes) {
     resetProcesses(processes);
+    GanttChart chart = new GanttChart();
     int time = 0;
     int finished = 0;
 
@@ -122,12 +153,12 @@ static void preemptivePriority(List<Process> processes) {
         }
 
         if (highest == null) {
-            System.out.println("Idle");
+            chart.add("Idle", time, time + 1);
             time++;
             continue;
         }
 
-        System.out.println(highest.id);
+        chart.add(highest.id, time, time + 1);
         highest.remaining--;
         time++;
 
@@ -135,6 +166,7 @@ static void preemptivePriority(List<Process> processes) {
             finished++;
         }
     }
+    chart.print();
 }
 ```
 
@@ -148,6 +180,7 @@ static void roundRobin(List<Process> processes, int quantum) {
         throw new IllegalArgumentException("Quantum must be positive");
     }
     resetProcesses(processes);
+    GanttChart chart = new GanttChart();
     List<Process> arrivals = byArrival(processes);
     Queue<Process> ready = new LinkedList<>();
     int next = 0;
@@ -161,7 +194,7 @@ static void roundRobin(List<Process> processes, int quantum) {
         }
 
         if (ready.isEmpty()) {
-            System.out.println("Idle");
+            chart.add("Idle", time, time + 1);
             time++;
             continue;
         }
@@ -170,7 +203,7 @@ static void roundRobin(List<Process> processes, int quantum) {
         int runTime = Math.min(quantum, current.remaining);
 
         for (int i = 0; i < runTime; i++) {
-            System.out.println(current.id);
+            chart.add(current.id, time, time + 1);
             current.remaining--;
             time++;
 
@@ -186,6 +219,7 @@ static void roundRobin(List<Process> processes, int quantum) {
             ready.add(current);
         }
     }
+    chart.print();
 }
 ```
 
@@ -222,6 +256,7 @@ static void mlfq(List<Process> processes, int[] quantum) {
         }
     }
     resetProcesses(processes);
+    GanttChart chart = new GanttChart();
     List<Process> arrivals = byArrival(processes);
     List<Deque<Process>> queues = new ArrayList<>();
 
@@ -256,12 +291,12 @@ static void mlfq(List<Process> processes, int[] quantum) {
         }
 
         if (current == null) {
-            System.out.println("Idle");
+            chart.add("Idle", time, time + 1);
             time++;
             continue;
         }
 
-        System.out.println(current.id);
+        chart.add(current.id, time, time + 1);
         current.remaining--;
         current.quantumUsed++;
         time++;
@@ -278,6 +313,7 @@ static void mlfq(List<Process> processes, int[] quantum) {
             current = null;
         }
     }
+    chart.print();
 }
 ```
 
@@ -298,6 +334,7 @@ static void mlq(List<Process> processes, int[] quantum) {
         }
     }
     resetProcesses(processes);
+    GanttChart chart = new GanttChart();
     List<Process> arrivals = byArrival(processes);
     List<Deque<Process>> queues = new ArrayList<>();
 
@@ -336,12 +373,12 @@ static void mlq(List<Process> processes, int[] quantum) {
         }
 
         if (current == null) {
-            System.out.println("Idle");
+            chart.add("Idle", time, time + 1);
             time++;
             continue;
         }
 
-        System.out.println(current.id);
+        chart.add(current.id, time, time + 1);
         current.remaining--;
         current.quantumUsed++;
         time++;
@@ -355,6 +392,7 @@ static void mlq(List<Process> processes, int[] quantum) {
             current = null;
         }
     }
+    chart.print();
 }
 ```
 
